@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HalalClip — Music-Free Video Downloader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg:        #0b0f0e;
+    --surface:   #121918;
+    --border:    #1e2d2a;
+    --gold:      #c8965a;
+    --gold-dim:  #8a6035;
+    --teal:      #2a7a6a;
+    --teal-lit:  #3aaa8e;
+    --text:      #e8ded0;
+    --muted:     #7a8a84;
+    --error:     #c0504a;
+    --success:   #3aaa8e;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 1rem 4rem;
+    overflow-x: hidden;
+  }
+
+  /* ── Background pattern ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 60% 40% at 50% 0%, rgba(42,122,106,0.18) 0%, transparent 70%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232a7a6a' fill-opacity='0.04'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 3.5rem 1rem 1.5rem;
+    width: 100%;
+    max-width: 680px;
+  }
+
+  .crescent {
+    font-size: 2.6rem;
+    line-height: 1;
+    margin-bottom: 0.6rem;
+    filter: drop-shadow(0 0 18px rgba(200,150,90,0.5));
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    from { filter: drop-shadow(0 0 10px rgba(200,150,90,0.35)); }
+    to   { filter: drop-shadow(0 0 28px rgba(200,150,90,0.7));  }
+  }
+
+  h1 {
+    font-family: 'Amiri', serif;
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--gold);
+    line-height: 1.1;
+  }
+
+  .tagline {
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .arabic {
+    font-family: 'Amiri', serif;
+    font-size: 1.1rem;
+    color: var(--gold-dim);
+    margin-top: 0.4rem;
+    direction: rtl;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    width: 120px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    margin: 1.4rem auto;
+  }
+
+  /* ── Card ── */
+  .card {
+    position: relative;
+    z-index: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 620px;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.45);
+  }
+
+  /* corner ornaments */
+  .card::before, .card::after {
+    content: '✦';
+    position: absolute;
+    color: var(--gold-dim);
+    font-size: 0.7rem;
+    opacity: 0.5;
+  }
+  .card::before { top: 10px; left: 14px; }
+  .card::after  { bottom: 10px; right: 14px; }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.55rem;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--teal-lit); }
+  input[type="text"]::placeholder { color: var(--muted); opacity: 0.5; }
+
+  button#go-btn {
+    background: linear-gradient(135deg, var(--teal) 0%, var(--teal-lit) 100%);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1.4rem;
+    transition: opacity 0.2s, transform 0.15s;
+    white-space: nowrap;
+  }
+  button#go-btn:hover  { opacity: 0.88; transform: translateY(-1px); }
+  button#go-btn:active { transform: translateY(0); }
+  button#go-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ── Progress section ── */
+  #progress-section {
+    margin-top: 1.6rem;
+    display: none;
+  }
+
+  .status-label {
+    font-size: 0.82rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .bar-track {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    height: 8px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--teal) 0%, var(--teal-lit) 100%);
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.5s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -60%; width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    animation: shimmer 1.5s linear infinite;
+  }
+
+  @keyframes shimmer {
+    from { left: -60%; }
+    to   { left: 110%; }
+  }
+
+  .message {
+    font-size: 0.88rem;
+    color: var(--muted);
+    margin-top: 0.7rem;
+    min-height: 1.2em;
+  }
+
+  /* ── Done state ── */
+  .done-box {
+    display: none;
+    margin-top: 1.6rem;
+    padding: 1.2rem 1.4rem;
+    background: rgba(42,122,106,0.12);
+    border: 1px solid var(--teal);
+    border-radius: 12px;
+  }
+
+  .done-box p {
+    font-size: 0.93rem;
+    color: var(--success);
+    margin-bottom: 0.8rem;
+  }
+
+  .done-box a {
+    display: inline-block;
+    background: var(--teal);
+    color: #fff;
+    text-decoration: none;
+    padding: 0.55rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    transition: background 0.2s;
+  }
+  .done-box a:hover { background: var(--teal-lit); }
+
+  /* ── Error ── */
+  .error-box {
+    display: none;
+    margin-top: 1.6rem;
+    padding: 1rem 1.2rem;
+    background: rgba(192,80,74,0.1);
+    border: 1px solid var(--error);
+    border-radius: 12px;
+    font-size: 0.88rem;
+    color: #e07070;
+  }
+
+  /* ── Steps info ── */
+  .steps {
+    position: relative;
+    z-index: 1;
+    margin-top: 2rem;
+    width: 100%;
+    max-width: 620px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+  }
+
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 0.9rem;
+    text-align: center;
+  }
+
+  .step-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+  .step-title {
+    font-family: 'Amiri', serif;
+    font-size: 0.95rem;
+    color: var(--gold);
+    margin-bottom: 0.2rem;
+  }
+  .step-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* ── Footer ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    margin-top: 3rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    opacity: 0.5;
+  }
+
+  @media (max-width: 480px) {
+    .steps { grid-template-columns: 1fr; }
+    .input-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="crescent">☽</div>
+  <h1>HalalClip</h1>
+  <p class="tagline">Music-Free Video Downloader</p>
+  <p class="arabic">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
+  <div class="divider"></div>
+</header>
+
+<div class="card">
+  <label for="url-input">Paste a video link (YouTube, Instagram, TikTok, etc.)</label>
+  <div class="input-row">
+    <input type="text" id="url-input" placeholder="https://youtube.com/watch?v=…" autocomplete="off"/>
+    <button id="go-btn" onclick="startJob()">Remove Music</button>
+  </div>
+
+  <div id="progress-section">
+    <div class="status-label">
+      <span>Processing</span>
+      <span id="pct-label">0%</span>
+    </div>
+    <div class="bar-track">
+      <div class="bar-fill" id="bar"></div>
+    </div>
+    <p class="message" id="msg-text">Starting…</p>
+  </div>
+
+  <div class="done-box" id="done-box">
+    <p>✓ Done! Vocals-only video saved to your Downloads folder.</p>
+    <a id="dl-link" href="#">⬇ Download again</a>
+  </div>
+
+  <div class="error-box" id="error-box"></div>
+</div>
+
+<div class="steps">
+  <div class="step">
+    <div class="step-icon">⬇</div>
+    <div class="step-title">Download</div>
+    <div class="step-desc">Fetches the video from any supported platform</div>
+  </div>
+  <div class="step">
+    <div class="step-icon">🎵</div>
+    <div class="step-title">Separate</div>
+    <div class="step-desc">AI isolates vocals, removes all instrumental music</div>
+  </div>
+  <div class="step">
+    <div class="step-icon">💾</div>
+    <div class="step-title">Save</div>
+    <div class="step-desc">Vocals-only video saved to your Downloads folder</div>
+  </div>
+</div>
+
+<footer>
+  100% free &amp; open-source · Runs locally on your machine · No data leaves your device
+</footer>
+
+<script>
+let pollTimer = null;
+
+async function startJob() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) return;
+
+  // Reset UI
+  document.getElementById('go-btn').disabled = true;
+  document.getElementById('done-box').style.display = 'none';
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('progress-section').style.display = 'block';
+  setProgress(5, 'Starting…');
+
+  try {
+    const res  = await fetch('/api/start', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to start');
+    poll(data.job_id);
+  } catch(e) {
+    showError(e.message);
+  }
+}
+
+function poll(jobId) {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const res  = await fetch(`/api/status/${jobId}`);
+      const data = await res.json();
+      setProgress(data.progress, data.message);
+
+      if (data.status === 'done') {
+        clearInterval(pollTimer);
+        showDone(jobId, data.filename);
+      } else if (data.status === 'error') {
+        clearInterval(pollTimer);
+        showError(data.message);
+      }
+    } catch(e) {
+      clearInterval(pollTimer);
+      showError('Lost connection to server.');
+    }
+  }, 1500);
+}
+
+function setProgress(pct, msg) {
+  document.getElementById('bar').style.width = pct + '%';
+  document.getElementById('pct-label').textContent = pct + '%';
+  document.getElementById('msg-text').textContent = msg;
+}
+
+function showDone(jobId, filename) {
+  document.getElementById('progress-section').style.display = 'none';
+  const box = document.getElementById('done-box');
+  box.style.display = 'block';
+  document.getElementById('dl-link').href = `/api/download/${jobId}`;
+  document.getElementById('go-btn').disabled = false;
+}
+
+function showError(msg) {
+  document.getElementById('progress-section').style.display = 'none';
+  const box = document.getElementById('error-box');
+  box.style.display = 'block';
+  box.textContent = '⚠ ' + msg;
+  document.getElementById('go-btn').disabled = false;
+}
+
+// Allow Enter key to submit
+document.getElementById('url-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startJob();
+});
+</script>
+</body>
+</html>
